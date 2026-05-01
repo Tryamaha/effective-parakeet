@@ -3,66 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-    <title>AstroVision V11 - Sonic Voyager</title>
+    <title>AstroVision V12 - Astro-Sonic Ultimate</title>
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --neon: #00f2ff; --glass: rgba(0, 10, 20, 0.85); --purple: #7000ff; }
+        :root { --neon: #00f2ff; --purple: #7000ff; --glass: rgba(0, 10, 20, 0.85); }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
         
-        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.7; }
-        #freq-canvas { position: absolute; bottom: 150px; left: 0; width: 100%; height: 150px; z-index: 3; pointer-events: none; }
+        /* layers */
+        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.8; transition: transform 0.2s; }
+        #overlay-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
         
+        /* UI HUD */
         .ui-layer { position: absolute; z-index: 10; pointer-events: auto; width: 100%; }
-        #hud-top { top: env(safe-area-inset-top); padding: 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); display: flex; justify-content: space-between; align-items: flex-start; }
+        #top-hud { top: env(safe-area-inset-top); padding: 15px; display: flex; justify-content: space-between; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); }
         
-        .siri-orb { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; background: radial-gradient(circle, var(--neon), var(--purple), #ff00c8); filter: blur(40px); border-radius: 50%; z-index: 5; opacity: 0.5; animation: pulse 3s infinite; }
+        /* Siri Orb */
+        .siri-orb { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 220px; height: 90px; background: radial-gradient(circle, var(--neon), var(--purple), #ff00c8); filter: blur(35px); border-radius: 50%; z-index: 3; opacity: 0.4; animation: pulse 4s infinite; }
         
-        #audio-panel { position: absolute; top: 120px; right: 15px; width: 120px; background: var(--glass); padding: 15px; border-radius: 15px; border: 1px solid var(--neon); font-family: monospace; font-size: 10px; color: var(--neon); }
-        
-        #controls { bottom: calc(env(safe-area-inset-bottom) + 20px); display: flex; justify-content: center; align-items: center; gap: 30px; padding: 20px; }
-        .btn { width: 60px; height: 60px; border-radius: 50%; background: var(--glass); border: 1px solid var(--neon); color: white; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        #main-btn { width: 85px; height: 85px; border: 6px solid #fff; }
+        /* AI Panel */
+        #ai-panel { position: absolute; top: 100px; right: 15px; width: 160px; background: var(--glass); padding: 15px; border-radius: 15px; border: 1px solid var(--neon); font-family: monospace; font-size: 10px; }
+        .ai-comment { color: yellow; margin-top: 8px; font-style: italic; border-top: 1px solid rgba(0,242,255,0.2); padding-top: 5px; }
 
-        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; } 50% { transform: translateX(-50%) scale(1.3, 0.7); opacity: 0.7; } }
+        /* Controls */
+        #controls { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 20px); width: 100%; display: flex; justify-content: center; align-items: center; gap: 25px; z-index: 20; }
+        .btn { width: 55px; height: 55px; border-radius: 50%; background: var(--glass); border: 1px solid var(--neon); color: white; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #shutter { width: 80px; height: 80px; border: 5px solid #fff; }
+
+        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; } 50% { transform: translateX(-50%) scale(1.4, 0.8); opacity: 0.6; } }
     </style>
 </head>
 <body>
 
 <video id="video" autoplay playsinline muted></video>
-<canvas id="freq-canvas"></canvas>
+<canvas id="overlay-canvas"></canvas>
 <div class="siri-orb"></div>
 
-<div id="hud-top" class="ui-layer">
+<div id="top-hud" class="ui-layer">
     <div>
-        <div style="font-weight: 900; font-size: 18px; text-shadow: 0 0 10px var(--neon);">SONIC VOYAGER V11</div>
-        <div id="status" style="color: var(--neon); font-size: 10px;">AI FREQUENCY SCANNER: ACTIVE</div>
+        <div style="font-weight: 900; font-size: 16px; text-shadow: 0 0 10px var(--neon);">ASTRO-SONIC V12</div>
+        <div id="target-id" style="color: var(--neon); font-size: 10px;">HEDEF: ARANIYOR...</div>
     </div>
     <div style="text-align: right; font-size: 10px; color: var(--neon);">
-        LAT: <span id="lat">--</span><br>
-        LON: <span id="lon">--</span>
+        AZ: <span id="az-val">--</span>° | ALT: <span id="alt-val">--</span>°<br>
+        GPS: <span id="gps-stat">LOCKED</span>
     </div>
 </div>
 
-<div id="audio-panel" class="ui-layer">
-    FREQUENCY:<br><b id="freq-val">0 Hz</b><br><br>
-    PEAK:<br><b id="peak-val">0 dB</b><br><br>
-    ZONE:<br><b id="zone-val">IDLE</b>
+<div id="ai-panel" class="ui-layer">
+    <b>SCANNER DATA</b><br>
+    FREQ: <span id="f-val">0 Hz</span><br>
+    ZONE: <span id="z-val">IDLE</span><br>
+    <div class="ai-comment" id="ai-msg">AI: Ortam analizi bekleniyor...</div>
 </div>
 
-<div id="controls" class="ui-layer" style="position: absolute; bottom: 0;">
-    <button class="btn" onclick="toggleZoom(-5)"><i data-lucide="zoom-out"></i></button>
-    <div id="main-btn" class="btn" onclick="initAudio()">🎙️</div>
-    <button class="btn" onclick="toggleZoom(5)"><i data-lucide="zoom-in"></i></button>
+<div id="controls" class="ui-layer">
+    <button class="btn" onclick="adjustZoom(-5)"><i data-lucide="zoom-out"></i></button>
+    <div id="shutter" class="btn" onclick="toggleAudio()">🎙️</div>
+    <button class="btn" onclick="adjustZoom(5)"><i data-lucide="zoom-in"></i></button>
 </div>
 
 <script>
     lucide.createIcons();
     const video = document.getElementById('video');
-    const fCanvas = document.getElementById('freq-canvas');
-    const fCtx = fCanvas.getContext('2d');
-    let audioCtx, analyser, dataArray, zoom = 1.0;
+    const canvas = document.getElementById('overlay-canvas');
+    const ctx = canvas.getContext('2d');
+    let zoom = 1.0, lat, lon, heading = 0, audioCtx, analyser, dataArray;
 
     async function init() {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -72,75 +79,99 @@
         video.srcObject = stream;
         
         navigator.geolocation.getCurrentPosition(p => {
-            document.getElementById('lat').innerText = p.coords.latitude.toFixed(4);
-            document.getElementById('lon').innerText = p.coords.longitude.toFixed(4);
+            lat = p.coords.latitude; lon = p.coords.longitude;
+            document.getElementById('gps-stat').innerText = "LAT: " + lat.toFixed(2);
+        });
+
+        window.addEventListener('deviceorientation', e => {
+            heading = e.webkitCompassHeading || 360 - e.alpha;
+            document.getElementById('az-val').innerText = Math.round(heading);
+            updateCelestialMath();
         });
 
         render();
     }
 
-    async function initAudio() {
+    async function toggleAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const stream = video.srcObject;
-            const source = audioCtx.createMediaStreamSource(stream);
+            const source = audioCtx.createMediaStreamSource(video.srcObject);
             analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 2048;
+            analyser.fftSize = 1024;
             source.connect(analyser);
             dataArray = new Uint8Array(analyser.frequencyBinCount);
-            document.getElementById('status').innerText = "AUDIO ANALYSIS: RUNNING";
+            document.getElementById('ai-msg').innerText = "AI: Dinleme aktif. Frekanslar taranıyor.";
         }
+    }
+
+    function updateCelestialMath() {
+        if(!lat || !lon) return;
+        const now = new Date();
+        const obs = new Astronomy.Observer(lat, lon, 0);
+        const bodies = ['Moon', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
+        
+        bodies.forEach(body => {
+            const equ = Astronomy.Equator(body, now, obs, true, true);
+            const hor = Astronomy.Horizon(now, obs, equ.ra, equ.dec, 'normal');
+            if(Math.abs(hor.azimuth - heading) < 15 && hor.altitude > 0) {
+                document.getElementById('target-id').innerText = "HEDEF: " + body.toUpperCase();
+                document.getElementById('alt-val').innerText = Math.round(hor.altitude);
+            }
+        });
     }
 
     function render() {
-        // Frequency Visualizer
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+
+        // Crosshair
+        ctx.strokeStyle = '#00f2ff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, canvas.height/2, 100, 0, Math.PI*2);
+        ctx.moveTo(canvas.width/2-120, canvas.height/2); ctx.lineTo(canvas.width/2+120, canvas.height/2);
+        ctx.moveTo(canvas.width/2, canvas.height/2-120); ctx.lineTo(canvas.width/2, canvas.height/2+120);
+        ctx.stroke();
+
+        // Audio Visualizer (Waveform on HUD)
         if (analyser) {
-            fCanvas.width = window.innerWidth;
-            fCanvas.height = 150;
             analyser.getByteFrequencyData(dataArray);
-            
-            fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
-            fCtx.beginPath();
-            fCtx.strokeStyle = '#00f2ff';
-            fCtx.lineWidth = 2;
-            
-            let sliceWidth = fCanvas.width / dataArray.length;
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(0, 242, 255, 0.5)';
+            let slice = canvas.width / dataArray.length;
             let x = 0;
-            let maxVal = 0;
-            let maxIdx = 0;
+            let maxHz = 0, maxDb = 0;
 
-            for (let i = 0; i < dataArray.length; i++) {
+            for(let i=0; i<dataArray.length; i++) {
                 let v = dataArray[i] / 128.0;
-                let y = v * fCanvas.height / 2;
-                
-                if (dataArray[i] > maxVal) {
-                    maxVal = dataArray[i];
-                    maxIdx = i;
-                }
-
-                if (i === 0) fCtx.moveTo(x, fCanvas.height - y);
-                else fCtx.lineTo(x, fCanvas.height - y);
-                x += sliceWidth;
+                let y = v * 50;
+                if(i===0) ctx.moveTo(x, canvas.height - 200 - y);
+                else ctx.lineTo(x, canvas.height - 200 - y);
+                x += slice;
+                if(dataArray[i] > maxDb) { maxDb = dataArray[i]; maxHz = i; }
             }
-            fCtx.stroke();
-            
-            const hz = Math.round(maxIdx * audioCtx.sampleRate / analyser.fftSize);
-            document.getElementById('freq-val').innerText = hz + " Hz";
-            document.getElementById('peak-val').innerText = maxVal + " dB";
-            
-            // Frequency Zoning AI
-            let zone = "NORMAL";
-            if (hz > 15000) zone = "ULTRASONIC";
-            else if (hz < 50) zone = "INFRASONIC";
-            else if (hz > 2000 && hz < 4000) zone = "VOICE";
-            document.getElementById('zone-val').innerText = zone;
-        }
+            ctx.stroke();
 
+            const hz = Math.round(maxHz * audioCtx.sampleRate / analyser.fftSize);
+            document.getElementById('f-val').innerText = hz + " Hz";
+            
+            // AI Comment Logic
+            if(hz > 15000) {
+                document.getElementById('z-val').innerText = "ULTRASONIC";
+                document.getElementById('ai-msg').innerText = "AI: İnsan kulağının duyamadığı yüksek frekanslı bir sinyal yakalandı.";
+            } else if(hz < 60 && maxDb > 50) {
+                document.getElementById('z-val').innerText = "INFRASONIC";
+                document.getElementById('ai-msg').innerText = "AI: Derin, düşük frekanslı bir uğultu tespit edildi. Yapısal bir titreşim olabilir.";
+            } else {
+                document.getElementById('z-val').innerText = "NORMAL";
+            }
+        }
         requestAnimationFrame(render);
     }
 
-    function toggleZoom(amt) {
-        zoom = Math.max(1, Math.min(50, zoom + amt));
+    function adjustZoom(amt) {
+        zoom = Math.max(1, Math.min(60, zoom + (amt/5)));
         video.style.transform = `scale(${zoom})`;
     }
 
