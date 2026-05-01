@@ -4,105 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>AstroVision PRO+ V2.1</title>
+    <title>AstroVision V2.4</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --accent: #00f2ff; --bg: #000; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); font-family: monospace; overflow: hidden; color: white; height: 100vh; }
-        
-        #video-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #111; overflow: hidden; }
-        video { width: 100%; height: 100%; object-fit: cover; transform-origin: center; transition: filter 0.3s; }
-        
-        .hud-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 10; padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom); }
-        .reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; border: 1px solid var(--accent); border-radius: 50%; opacity: 0.6; }
-        .reticle::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent); font-size: 24px; }
-
-        .data-grid { display: flex; justify-content: space-between; margin-top: 20px; font-size: 10px; color: var(--accent); }
-        
-        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 25px; z-index: 20; }
-        .zoom-bar { width: 85%; max-width: 400px; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; accent-color: var(--accent); pointer-events: auto; }
-        
-        .btn-group { display: flex; gap: 30px; pointer-events: auto; }
-        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--accent); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); backdrop-filter: blur(5px); }
-        .btn.active { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
-        
-        .nv-mode { filter: sepia(1) hue-rotate(90deg) brightness(1.6) contrast(1.4) !important; }
+        body { margin: 0; background: #000; color: #00f2ff; font-family: monospace; overflow: hidden; height: 100vh; }
+        video { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        #debug { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 100; font-size: 12px; background: rgba(0,0,0,0.5); }
+        .ui { position: absolute; inset: 0; z-index: 10; pointer-events: none; border: 1px solid rgba(0,242,255,0.2); }
+        .controls { position: absolute; bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; pointer-events: auto; gap: 20px; }
+        input[type=range] { width: 80%; accent-color: #00f2ff; }
+        button { background: rgba(0,0,0,0.6); border: 1px solid #00f2ff; color: #00f2ff; padding: 15px; border-radius: 50%; }
     </style>
 </head>
 <body>
-
-<div id="video-container">
-    <video id="webcam" autoplay playsinline muted></video>
-</div>
-
-<div class="hud-overlay">
-    <div class="data-grid">
-        <div>AZ: <span id="az">0°</span><br>PT: <span id="pt">0°</span><br>MAG: <span id="mag">1.0X</span></div>
-        <div style="text-align: right;">SENS: 48MP<br>AI: ACTIVE<br>GPS: LOCKED</div>
+    <div id="debug">SİSTEM BAŞLATILIYOR...</div>
+    <video id="v" autoplay playsinline muted></video>
+    <div class="ui"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border:1px solid #00f2ff;border-radius:50%;"></div></div>
+    <div class="controls">
+        <input type="range" min="1" max="15" step="0.1" value="1" oninput="document.getElementById('v').style.transform='scale('+this.value+')'">
+        <button onclick="location.reload()"><i data-lucide="refresh-cw"></i></button>
     </div>
-    <div class="reticle"></div>
-</div>
-
-<div class="controls">
-    <input type="range" class="zoom-bar" id="zoom" min="1" max="15" step="0.1" value="1">
-    <div class="btn-group">
-        <button class="btn" id="nv-toggle"><i data-lucide="eye"></i></button>
-        <button class="btn" onclick="location.reload()"><i data-lucide="refresh-cw"></i></button>
-        <button class="btn" id="stab-toggle"><i data-lucide="target"></i></button>
-    </div>
-</div>
-
-<script>
-    // İkonları yükle
-    lucide.createIcons();
-
-    const video = document.getElementById('webcam');
-    const zoomInput = document.getElementById('zoom');
-    const magDisplay = document.getElementById('mag');
-
-    async function startCamera() {
-        const constraints = {
-            video: {
-                facingMode: "environment",
-                width: { ideal: 4096 },
-                height: { ideal: 2160 }
+    <script>
+        lucide.createIcons();
+        async function start() {
+            const d = document.getElementById('debug');
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
+                document.getElementById('v').srcObject = s;
+                d.innerText = "SİSTEM BAŞARILI: KAMERA AKTİF";
+                setTimeout(() => d.style.display = 'none', 3000);
+            } catch (e) {
+                d.innerText = "HATA: " + e.message + " - LÜTFEN İZİNLERİ KONTROL EDİN";
+                // Arka kamera bulunamazsa herhangi bir kamerayı dene
+                const s = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('v').srcObject = s;
             }
-        };
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = stream;
-            console.log("Kamera başarıyla başlatıldı.");
-        } catch (err) {
-            console.error("Kamera hatası:", err);
-            alert("Lütfen HTTPS bağlantısı kullandığınızdan ve kamera izni verdiğinizden emin olun.");
         }
-    }
-
-    // Zoom İşlemi
-    zoomInput.oninput = (e) => {
-        const val = e.target.value;
-        video.style.transform = `scale(${val})`;
-        magDisplay.innerText = val + "X";
-    };
-
-    // Gece Görüşü
-    document.getElementById('nv-toggle').onclick = function() {
-        this.classList.toggle('active');
-        video.classList.toggle('nv-mode');
-    };
-
-    // Telemetri
-    window.addEventListener('deviceorientation', (e) => {
-        document.getElementById('az').innerText = Math.round(e.alpha || 0) + "°";
-        document.getElementById('pt').innerText = Math.round(e.beta || 0) + "°";
-    });
-
-    // Sayfa yüklendiğinde başlat
-    window.addEventListener('load', startCamera);
-</script>
-
+        window.onload = start;
+    </script>
 </body>
 </html>
