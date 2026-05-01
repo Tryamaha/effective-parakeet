@@ -2,213 +2,169 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-    <title>AstroVision V11 - Galactic Overlord</title>
-    
-    <!-- Ultra-Deep Astronomy Engine & Icons -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AstroVision Nebula V12</title>
+
+    <!-- Professional Core Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        :root { 
-            --neon: #00f2ff; 
-            --deep-purple: #7000ff;
-            --glass: rgba(0, 5, 15, 0.85);
-            --border: rgba(0, 242, 255, 0.3);
-        }
-        
+        :root { --accent: #00f2ff; --neon-purple: #7000ff; --glass: rgba(0, 12, 24, 0.75); }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; color: #fff; font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+        body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; height: 100vh; }
 
-        /* Arka Plan Katmanları */
-        #main-container { position: relative; width: 100vw; height: 100vh; }
-        #video-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: filter 0.5s ease; }
-        #rendering-surface { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        /* Render Layers */
+        #video-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: filter 0.4s ease; }
+        #canvas-overlay { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
 
-        /* Premium Glassmorphism HUD */
-        .hud-panel { position: absolute; z-index: 10; pointer-events: auto; backdrop-filter: blur(25px); border: 1px solid var(--border); border-radius: 20px; background: var(--glass); }
+        /* Glassmorphism UI Components */
+        .hud-ui { position: absolute; z-index: 10; pointer-events: auto; }
+        #top-bar { top: env(safe-area-inset-top); left: 0; right: 0; padding: 15px; background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%); display: flex; justify-content: space-between; align-items: flex-start; }
         
-        #header-bar { top: env(safe-area-inset-top); left: 15px; right: 15px; height: 60px; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%); border: none; border-radius: 0; }
-        #header-bar h1 { font-size: 16px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 15px var(--neon); color: #fff; }
-
-        #telemetry-box { top: 120px; left: 15px; width: 160px; padding: 15px; font-family: 'Courier New', monospace; font-size: 10px; color: var(--neon); }
-        .data-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid rgba(0,242,255,0.1); padding-bottom: 2px; }
-
-        /* Dynamic Target Crosshair */
-        #scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; z-index: 5; pointer-events: none; }
-        .scan-ring { position: absolute; inset: 0; border: 1px solid var(--neon); border-radius: 50%; opacity: 0.2; animation: pulseRing 4s infinite; }
-        .scan-ring-inner { position: absolute; inset: 30%; border: 1px dashed var(--neon); border-radius: 50%; opacity: 0.4; animation: rotate 30s linear infinite; }
-
-        /* Siri-Inspired AI Control Hub */
-        #ai-control-hub { position: absolute; bottom: 0; left: 0; right: 0; height: 280px; background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: env(safe-area-inset-bottom); }
+        .data-label { font-family: 'Courier New', monospace; font-size: 11px; color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 8px rgba(0,242,255,0.6); line-height: 1.4; }
         
-        .siri-nebula-core { position: absolute; bottom: 40px; width: 220px; height: 100px; background: radial-gradient(ellipse at center, var(--neon), var(--deep-purple), #ff00c8); filter: blur(40px); opacity: 0.5; border-radius: 50%; z-index: -1; animation: siriBreath 5s infinite ease-in-out; }
+        /* Ultra-Telescope Reticle */
+        .reticle-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 8; }
+        .outer-ring { width: 180px; height: 180px; border: 1px solid rgba(0,242,255,0.25); border-radius: 50%; animation: pulseRing 4s infinite linear; }
+        .inner-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent); font-size: 20px; opacity: 0.6; }
 
-        #action-bar { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
-        .control-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--glass); border: 1px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .control-btn:active { transform: scale(0.85); background: var(--neon); color: #000; }
-        #capture-btn { width: 85px; height: 85px; border: 6px solid #fff; background: rgba(255,255,255,0.15); box-shadow: 0 0 25px rgba(0, 242, 255, 0.4); }
+        /* Siri-Orb V5 Evolution */
+        .nebula-nebula { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 180px; height: 60px; background: radial-gradient(circle, var(--accent), var(--neon-purple), #ff00c8); filter: blur(30px); border-radius: 50%; z-index: 4; opacity: 0.4; animation: siriBreath 6s infinite ease-in-out; }
 
-        /* Orbital Map (Mini-Map) */
-        #orbital-map { position: absolute; top: 120px; right: 15px; width: 120px; height: 120px; border-radius: 50%; overflow: hidden; }
+        /* Professional Control Cluster */
+        #bottom-panel { bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; background: var(--glass); backdrop-filter: blur(25px); padding: 14px 28px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        
+        .action-btn { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .action-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0, 242, 255, 0.1); box-shadow: 0 0 15px var(--accent); }
+        #capture-shutter { width: 70px; height: 70px; border: 4px solid #fff; background: rgba(255,255,255,0.1); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
 
-        /* Animations */
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0; } 50% { opacity: 0.3; } 100% { transform: scale(1.2); opacity: 0; } }
-        @keyframes siriBreath { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.5, 0.85); opacity: 0.7; } }
+        @keyframes siriBreath { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.3; } 50% { transform: translateX(-50%) scale(1.3, 0.85); opacity: 0.6; } }
+        @keyframes pulseRing { from { transform: rotate(0deg); opacity: 0.2; } to { transform: rotate(360deg); opacity: 0.4; } }
 
-        #permission-overlay { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
-        .prime-btn { padding: 15px 40px; background: var(--neon); color: #000; font-weight: 900; border-radius: 50px; border: none; margin-top: 20px; }
+        #error-msg { position: fixed; top: 50%; width: 100%; text-align: center; color: #ff3b30; z-index: 100; font-size: 14px; background: rgba(0,0,0,0.8); display: none; padding: 20px; }
     </style>
 </head>
 <body>
 
-<div id="permission-overlay">
-    <h2 style="color: var(--neon); letter-spacing: 2px;">V11 GALACTIC OVERLORD</h2>
-    <p style="font-size: 12px; margin-top: 15px; opacity: 0.7;">SİSTEMLERİ BAŞLATMAK İÇİN SENSÖR ERİŞİMİ GEREKLİ</p>
-    <button class="prime-btn" onclick="requestFullAccess()">SİSTEMİ ÇALIŞTIR</button>
+<div id="error-msg">SİSTEM HATASI: KAMERA VEYA KONUM İZNİ GEREKLİ.</div>
+
+<video id="video-feed" autoplay playsinline muted></video>
+<canvas id="canvas-overlay"></canvas>
+<div class="nebula-nebula"></div>
+
+<div class="reticle-container">
+    <div class="outer-ring"></div>
+    <div class="inner-cross">+</div>
 </div>
 
-<div id="main-container">
-    <video id="video-feed" autoplay playsinline muted></video>
-    <canvas id="rendering-surface"></canvas>
-
-    <div id="header-bar">
-        <h1>CELESTIAL ENTITY V11</h1>
+<div id="top-bar" class="hud-ui">
+    <div class="data-label">
+        STATION: NEBULA V12<br>
+        LOC: <span id="loc-data">CALIBRATING...</span><br>
+        STATUS: <span id="status-data" style="color: #4cd964;">AI ACTIVE</span>
     </div>
-
-    <div id="scanner-overlay">
-        <div class="scan-ring"></div>
-        <div class="scan-ring-inner"></div>
+    <div class="data-label" style="text-align: right;">
+        MAG: <span id="mag-data">1.0x</span><br>
+        AZIMUTH: <span id="az-data">0°</span><br>
+        SENSOR: 48MP PRO+
     </div>
+</div>
 
-    <div id="telemetry-box" class="hud-panel">
-        <div class="data-line"><span>AZIMUTH</span><b id="val-az">000°</b></div>
-        <div class="data-line"><span>ALTITUDE</span><b id="val-alt">00.0°</b></div>
-        <div class="data-line"><span>OBJ-REF</span><b id="val-obj">AUTO</b></div>
-        <div class="data-line"><span>GPS-ACC</span><b id="val-gps">HIGH</b></div>
-        <div class="data-line"><span>ISO-LVL</span><b id="val-iso">AUTO</b></div>
-    </div>
-
-    <div id="orbital-map" class="hud-panel">
-        <canvas id="map-canvas"></canvas>
-    </div>
-
-    <div id="ai-control-hub">
-        <div class="siri-nebula-core"></div>
-        <div id="action-bar">
-            <button class="control-btn" onclick="adjustZoom(-10)"><i data-lucide="zoom-out"></i></button>
-            <button class="control-btn" id="capture-btn" onclick="captureUltraRes()"></button>
-            <button class="control-btn" onclick="adjustZoom(10)"><i data-lucide="zoom-in"></i></button>
-        </div>
-        <p id="ai-status" style="font-size: 10px; color: var(--neon); margin-bottom: 25px; letter-spacing: 2px;">AI: DEEP SPACE SCAN ACTIVE</p>
-    </div>
+<div id="bottom-panel" class="hud-ui">
+    <button class="action-btn" id="mode-night" onclick="cycleMode()"><i data-lucide="eye"></i></button>
+    <button class="action-btn" onclick="updateZoom(-5)"><i data-lucide="minus"></i></button>
+    <div id="capture-shutter" class="action-btn" onclick="takePhoto()"></div>
+    <button class="action-btn" onclick="updateZoom(5)"><i data-lucide="plus"></i></button>
+    <button class="action-btn" id="ai-voice" onclick="toggleVoice()"><i data-lucide="mic"></i></button>
 </div>
 
 <script>
     lucide.createIcons();
     const video = document.getElementById('video-feed');
-    const canvas = document.getElementById('rendering-surface');
+    const canvas = document.getElementById('canvas-overlay');
     const ctx = canvas.getContext('2d');
-    let zoomLevel = 1.0, lat, lon, heading = 0, pitch = 0;
+    const err = document.getElementById('error-msg');
 
-    // Sistem Başlatma (Güvenli Alan)
-    async function requestFullAccess() {
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const permission = await DeviceOrientationEvent.requestPermission();
-            if (permission !== 'granted') return alert('Sensör erişimi reddedildi.');
-        }
-        
-        document.getElementById('permission-overlay').style.display = 'none';
-        initSystems();
-    }
+    let currentZoom = 1.0;
+    let userLat = null, userLon = null;
+    let currentHeading = 0;
+    let filterIndex = 0;
+    const filters = ['none', 'sepia(1) hue-rotate(90deg) brightness(1.5) contrast(1.2)', 'invert(1) hue-rotate(180deg) brightness(1.2)'];
 
-    async function initSystems() {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-                facingMode: { exact: "environment" }, 
-                width: { ideal: 3840 },
-                height: { ideal: 2160 }
-            }
-        });
-        video.srcObject = stream;
-
-        navigator.geolocation.getCurrentPosition(p => {
-            lat = p.coords.latitude;
-            lon = p.coords.longitude;
-            document.getElementById('val-gps').innerText = 'LOCKED';
-        });
-
-        window.addEventListener('deviceorientation', e => {
-            heading = e.webkitCompassHeading || 360 - e.alpha;
-            pitch = e.beta;
-            updateAstroCalculations();
-        });
-
-        renderEngine();
-    }
-
-    function updateAstroCalculations() {
-        if (!lat || !lon) return;
-        const now = new Date();
-        const observer = new Astronomy.Observer(lat, lon, 0);
-        
-        const bodies = ['Moon', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
-        let detected = "DEEP SPACE";
-
-        bodies.forEach(body => {
-            const equ = Astronomy.Equator(body, now, observer, true, true);
-            const hor = Astronomy.Horizon(now, observer, equ.ra, equ.dec, 'normal');
+    async function initializeSystem() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } }
+            });
+            video.srcObject = stream;
             
-            // Hassas hedef kilitleme mantığı
-            if (Math.abs(hor.azimuth - heading) < 8 && Math.abs(hor.altitude - pitch) < 8) {
-                detected = body.toUpperCase();
-                document.getElementById('ai-status').innerText = `AI: ${detected} DETECTED - AUTO FOCUS`;
-            }
-        });
+            navigator.geolocation.getCurrentPosition(pos => {
+                userLat = pos.coords.latitude;
+                userLon = pos.coords.longitude;
+                document.getElementById('loc-data').innerText = `${userLat.toFixed(2)}N, ${userLon.toFixed(2)}E`;
+            }, () => { err.style.display = 'block'; });
 
-        document.getElementById('val-az').innerText = Math.round(heading).toString().padStart(3, '0') + '°';
-        document.getElementById('val-alt').innerText = Math.round(pitch) + '.0°';
-        document.getElementById('val-obj').innerText = detected;
+            window.addEventListener('deviceorientation', e => {
+                currentHeading = e.webkitCompassHeading || (360 - e.alpha);
+                document.getElementById('az-data').innerText = Math.round(currentHeading) + "°";
+            });
+
+            loop();
+        } catch (e) { err.style.display = 'block'; }
     }
 
-    function renderEngine() {
+    function loop() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        const w = canvas.width / zoomLevel;
-        const h = canvas.height / zoomLevel;
-        const sx = (canvas.width - w) / 2;
-        const sy = (canvas.height - h) / 2;
-
-        ctx.drawImage(video, sx, sy, w, h, 0, 0, canvas.width, canvas.height);
+        const drawW = canvas.width / currentZoom;
+        const drawH = canvas.height / currentZoom;
+        const startX = (canvas.width - drawW) / 2;
+        const startY = (canvas.height - drawH) / 2;
         
-        // Profesyonel Overlay Çizimi
-        drawOverlayDecorations();
-        
-        requestAnimationFrame(renderEngine);
+        ctx.drawImage(video, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(loop);
     }
 
-    function drawOverlayDecorations() {
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2); ctx.lineTo(canvas.width, canvas.height / 2);
-        ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height);
-        ctx.stroke();
+    function updateZoom(step) {
+        currentZoom = Math.max(1, Math.min(100, currentZoom + step/10));
+        document.getElementById('mag-data').innerText = currentZoom.toFixed(1) + "x";
     }
 
-    function adjustZoom(amt) {
-        zoomLevel = Math.max(1, Math.min(150, zoomLevel + (amt / 10)));
-        document.getElementById('val-iso').innerText = zoomLevel.toFixed(1) + 'X';
+    function cycleMode() {
+        filterIndex = (filterIndex + 1) % filters.length;
+        video.style.filter = filters[filterIndex];
+        document.getElementById('mode-night').classList.toggle('active', filterIndex !== 0);
     }
 
-    function captureUltraRes() {
+    function toggleVoice() {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Speech) return;
+        const rec = new Speech();
+        rec.lang = 'tr-TR';
+        rec.onresult = (e) => {
+            const cmd = e.results[0][0].transcript.toLowerCase();
+            if (cmd.includes("yaklaş") || cmd.includes("zoom")) updateZoom(30);
+            if (cmd.includes("uzaklaş")) updateZoom(-30);
+            if (cmd.includes("çek") || cmd.includes("foto")) takePhoto();
+            if (cmd.includes("mod")) cycleMode();
+        };
+        rec.start();
+        document.getElementById('ai-voice').classList.add('active');
+        setTimeout(() => document.getElementById('ai-voice').classList.remove('active'), 3000);
+    }
+
+    function takePhoto() {
         const link = document.createElement('a');
-        link.download = `V11_GALACTIC_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
+        link.download = `Nebula_Capture_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
         link.click();
     }
+
+    window.onload = initializeSystem;
 </script>
 </body>
 </html>
