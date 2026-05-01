@@ -5,144 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>AstroVision Ultra PRO+</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <title>AstroVision PRO+ V2.1</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --accent: #00f2ff; --bg: #000; }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); font-family: monospace; overflow: hidden; color: white; height: 100vh; }
         
-        #app-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #video-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #111; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; transform-origin: center; transition: filter 0.3s; }
         
-        video { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: contrast(1.1) brightness(1); }
-        
-        /* HUD UI Elements */
-        .hud-overlay { position: absolute; inset: 0; pointer-events: none; border: 1px solid rgba(0, 242, 255, 0.2); z-index: 10; }
-        .reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border: 1px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .reticle::before { content: ''; width: 20px; height: 1px; background: var(--accent); position: absolute; }
-        .reticle::after { content: ''; height: 20px; width: 1px; background: var(--accent); position: absolute; }
+        .hud-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 10; padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom); }
+        .reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; border: 1px solid var(--accent); border-radius: 50%; opacity: 0.6; }
+        .reticle::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent); font-size: 24px; }
 
-        .telemetry { position: absolute; top: 50px; left: 20px; font-family: monospace; font-size: 10px; color: var(--accent); text-shadow: 0 0 5px #000; }
+        .data-grid { display: flex; justify-content: space-between; margin-top: 20px; font-size: 10px; color: var(--accent); }
         
-        /* Controls */
-        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 20; padding: 0 20px; }
+        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 25px; z-index: 20; }
+        .zoom-bar { width: 85%; max-width: 400px; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; accent-color: var(--accent); pointer-events: auto; }
         
-        .zoom-slider-container { width: 100%; display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-        input[type=range] { flex: 1; accent-color: var(--accent); }
-
-        .action-bar { display: flex; gap: 25px; }
-        .btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; backdrop-filter: blur(10px); pointer-events: auto; }
-        .btn.active { background: var(--accent); color: black; border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        .btn-group { display: flex; gap: 30px; pointer-events: auto; }
+        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--accent); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); backdrop-filter: blur(5px); }
+        .btn.active { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
         
-        .status-bar { position: absolute; top: 55px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; color: var(--accent); font-family: monospace; font-size: 10px; }
-        
-        /* Night Vision Filter */
-        .nv-active { filter: sepia(1) hue-rotate(60deg) brightness(1.5) contrast(1.2) !important; }
+        .nv-mode { filter: sepia(1) hue-rotate(90deg) brightness(1.6) contrast(1.4) !important; }
     </style>
 </head>
 <body>
 
-<div id="app-container">
-    <video id="cam-preview" autoplay playsinline muted></video>
-    
-    <div class="hud-overlay">
-        <div class="reticle"></div>
-        <div class="telemetry">
-            AZIMUTH: <span id="azimuth">0°</span><br>
-            PITCH: <span id="pitch">0°</span><br>
-            ISO: <span id="iso-val">AUTO</span><br>
-            SENSOR: 48MP ULTRA-RES
-        </div>
-        <div class="status-bar">
-            REC: READY<br>
-            GPS: <span id="gps-status">LOCKED</span><br>
-            AI: <span id="ai-status">ACTIVE</span>
-        </div>
-    </div>
+<div id="video-container">
+    <video id="webcam" autoplay playsinline muted></video>
+</div>
 
-    <div class="controls">
-        <div class="zoom-slider-container">
-            <i data-lucide="minus"></i>
-            <input type="range" id="zoom-range" min="1" max="10" step="0.1" value="1">
-            <i data-lucide="plus"></i>
-        </div>
-        
-        <div class="action-bar">
-            <button class="btn" id="toggle-nv" onclick="toggleNightVision()"><i data-lucide="eye"></i></button>
-            <button class="btn" onclick="takeSnapshot()"><i data-lucide="camera"></i></button>
-            <button class="btn" id="toggle-stabilize" onclick="toggleStabilize()"><i data-lucide="target"></i></button>
-        </div>
+<div class="hud-overlay">
+    <div class="data-grid">
+        <div>AZ: <span id="az">0°</span><br>PT: <span id="pt">0°</span><br>MAG: <span id="mag">1.0X</span></div>
+        <div style="text-align: right;">SENS: 48MP<br>AI: ACTIVE<br>GPS: LOCKED</div>
+    </div>
+    <div class="reticle"></div>
+</div>
+
+<div class="controls">
+    <input type="range" class="zoom-bar" id="zoom" min="1" max="15" step="0.1" value="1">
+    <div class="btn-group">
+        <button class="btn" id="nv-toggle"><i data-lucide="eye"></i></button>
+        <button class="btn" onclick="location.reload()"><i data-lucide="refresh-cw"></i></button>
+        <button class="btn" id="stab-toggle"><i data-lucide="target"></i></button>
     </div>
 </div>
 
 <script>
-    // Initialize Icons
+    // İkonları yükle
     lucide.createIcons();
 
-    const video = document.getElementById('cam-preview');
-    const zoomSlider = document.getElementById('zoom-range');
-    const azimuthEl = document.getElementById('azimuth');
-    const pitchEl = document.getElementById('pitch');
-    let isStabilized = false;
+    const video = document.getElementById('webcam');
+    const zoomInput = document.getElementById('zoom');
+    const magDisplay = document.getElementById('mag');
 
-    // Kamera Erişimi
-    async function initCamera() {
+    async function startCamera() {
+        const constraints = {
+            video: {
+                facingMode: "environment",
+                width: { ideal: 4096 },
+                height: { ideal: 2160 }
+            }
+        };
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 3840 },
-                    height: { ideal: 2160 }
-                }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
+            console.log("Kamera başarıyla başlatıldı.");
         } catch (err) {
-            console.error("Kamera erişimi engellendi:", err);
-            alert("Kamera izni gerekiyor.");
+            console.error("Kamera hatası:", err);
+            alert("Lütfen HTTPS bağlantısı kullandığınızdan ve kamera izni verdiğinizden emin olun.");
         }
     }
 
-    // Zoom Kontrolü (CSS Transform ile sensör kalitesini bozmadan simüle eder)
-    zoomSlider.addEventListener('input', (e) => {
+    // Zoom İşlemi
+    zoomInput.oninput = (e) => {
         const val = e.target.value;
         video.style.transform = `scale(${val})`;
-        document.getElementById('iso-val').innerText = `${Math.round(val * 100)}X`;
-    });
+        magDisplay.innerText = val + "X";
+    };
 
-    // Gece Görüşü Toggle
-    function toggleNightVision() {
-        const btn = document.getElementById('toggle-nv');
-        video.classList.toggle('nv-active');
-        btn.classList.toggle('active');
-        document.getElementById('ai-status').innerText = video.classList.contains('nv-active') ? "ENHANCED" : "ACTIVE";
-    }
+    // Gece Görüşü
+    document.getElementById('nv-toggle').onclick = function() {
+        this.classList.toggle('active');
+        video.classList.toggle('nv-mode');
+    };
 
-    // Stabilizasyon Simülasyonu
-    function toggleStabilize() {
-        isStabilized = !isStabilized;
-        const btn = document.getElementById('toggle-stabilize');
-        btn.classList.toggle('active');
-        video.style.transition = isStabilized ? "transform 0.3s ease-out" : "none";
-    }
-
-    // Hareket Sensörleri (Telemetri için)
+    // Telemetri
     window.addEventListener('deviceorientation', (e) => {
-        azimuthEl.innerText = `${Math.round(e.alpha || 0)}°`;
-        pitchEl.innerText = `${Math.round(e.beta || 0)}°`;
+        document.getElementById('az').innerText = Math.round(e.alpha || 0) + "°";
+        document.getElementById('pt').innerText = Math.round(e.beta || 0) + "°";
     });
 
-    function takeSnapshot() {
-        // Profesyonel fotoğraf yakalama mantığı buraya entegre edilebilir
-        alert("Görüntü AI ile işlendi ve kaydedildi.");
-    }
-
-    // Başlat
-    initCamera();
+    // Sayfa yüklendiğinde başlat
+    window.addEventListener('load', startCamera);
 </script>
 
 </body>
 </html>
-
-
-
-
