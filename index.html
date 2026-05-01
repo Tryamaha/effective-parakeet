@@ -2,169 +2,149 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>AstroVision Nebula V12</title>
-
-    <!-- Professional Core Libraries -->
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title>AstroVision V11 - Sonic Voyager</title>
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        :root { --accent: #00f2ff; --neon-purple: #7000ff; --glass: rgba(0, 12, 24, 0.75); }
+        :root { --neon: #00f2ff; --glass: rgba(0, 10, 20, 0.85); --purple: #7000ff; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; height: 100vh; }
-
-        /* Render Layers */
-        #video-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: filter 0.4s ease; }
-        #canvas-overlay { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-
-        /* Glassmorphism UI Components */
-        .hud-ui { position: absolute; z-index: 10; pointer-events: auto; }
-        #top-bar { top: env(safe-area-inset-top); left: 0; right: 0; padding: 15px; background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%); display: flex; justify-content: space-between; align-items: flex-start; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
         
-        .data-label { font-family: 'Courier New', monospace; font-size: 11px; color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 8px rgba(0,242,255,0.6); line-height: 1.4; }
+        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.7; }
+        #freq-canvas { position: absolute; bottom: 150px; left: 0; width: 100%; height: 150px; z-index: 3; pointer-events: none; }
         
-        /* Ultra-Telescope Reticle */
-        .reticle-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 8; }
-        .outer-ring { width: 180px; height: 180px; border: 1px solid rgba(0,242,255,0.25); border-radius: 50%; animation: pulseRing 4s infinite linear; }
-        .inner-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent); font-size: 20px; opacity: 0.6; }
-
-        /* Siri-Orb V5 Evolution */
-        .nebula-nebula { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 180px; height: 60px; background: radial-gradient(circle, var(--accent), var(--neon-purple), #ff00c8); filter: blur(30px); border-radius: 50%; z-index: 4; opacity: 0.4; animation: siriBreath 6s infinite ease-in-out; }
-
-        /* Professional Control Cluster */
-        #bottom-panel { bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; background: var(--glass); backdrop-filter: blur(25px); padding: 14px 28px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .ui-layer { position: absolute; z-index: 10; pointer-events: auto; width: 100%; }
+        #hud-top { top: env(safe-area-inset-top); padding: 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); display: flex; justify-content: space-between; align-items: flex-start; }
         
-        .action-btn { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .action-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0, 242, 255, 0.1); box-shadow: 0 0 15px var(--accent); }
-        #capture-shutter { width: 70px; height: 70px; border: 4px solid #fff; background: rgba(255,255,255,0.1); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .siri-orb { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; background: radial-gradient(circle, var(--neon), var(--purple), #ff00c8); filter: blur(40px); border-radius: 50%; z-index: 5; opacity: 0.5; animation: pulse 3s infinite; }
+        
+        #audio-panel { position: absolute; top: 120px; right: 15px; width: 120px; background: var(--glass); padding: 15px; border-radius: 15px; border: 1px solid var(--neon); font-family: monospace; font-size: 10px; color: var(--neon); }
+        
+        #controls { bottom: calc(env(safe-area-inset-bottom) + 20px); display: flex; justify-content: center; align-items: center; gap: 30px; padding: 20px; }
+        .btn { width: 60px; height: 60px; border-radius: 50%; background: var(--glass); border: 1px solid var(--neon); color: white; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #main-btn { width: 85px; height: 85px; border: 6px solid #fff; }
 
-        @keyframes siriBreath { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.3; } 50% { transform: translateX(-50%) scale(1.3, 0.85); opacity: 0.6; } }
-        @keyframes pulseRing { from { transform: rotate(0deg); opacity: 0.2; } to { transform: rotate(360deg); opacity: 0.4; } }
-
-        #error-msg { position: fixed; top: 50%; width: 100%; text-align: center; color: #ff3b30; z-index: 100; font-size: 14px; background: rgba(0,0,0,0.8); display: none; padding: 20px; }
+        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; } 50% { transform: translateX(-50%) scale(1.3, 0.7); opacity: 0.7; } }
     </style>
 </head>
 <body>
 
-<div id="error-msg">SİSTEM HATASI: KAMERA VEYA KONUM İZNİ GEREKLİ.</div>
+<video id="video" autoplay playsinline muted></video>
+<canvas id="freq-canvas"></canvas>
+<div class="siri-orb"></div>
 
-<video id="video-feed" autoplay playsinline muted></video>
-<canvas id="canvas-overlay"></canvas>
-<div class="nebula-nebula"></div>
-
-<div class="reticle-container">
-    <div class="outer-ring"></div>
-    <div class="inner-cross">+</div>
-</div>
-
-<div id="top-bar" class="hud-ui">
-    <div class="data-label">
-        STATION: NEBULA V12<br>
-        LOC: <span id="loc-data">CALIBRATING...</span><br>
-        STATUS: <span id="status-data" style="color: #4cd964;">AI ACTIVE</span>
+<div id="hud-top" class="ui-layer">
+    <div>
+        <div style="font-weight: 900; font-size: 18px; text-shadow: 0 0 10px var(--neon);">SONIC VOYAGER V11</div>
+        <div id="status" style="color: var(--neon); font-size: 10px;">AI FREQUENCY SCANNER: ACTIVE</div>
     </div>
-    <div class="data-label" style="text-align: right;">
-        MAG: <span id="mag-data">1.0x</span><br>
-        AZIMUTH: <span id="az-data">0°</span><br>
-        SENSOR: 48MP PRO+
+    <div style="text-align: right; font-size: 10px; color: var(--neon);">
+        LAT: <span id="lat">--</span><br>
+        LON: <span id="lon">--</span>
     </div>
 </div>
 
-<div id="bottom-panel" class="hud-ui">
-    <button class="action-btn" id="mode-night" onclick="cycleMode()"><i data-lucide="eye"></i></button>
-    <button class="action-btn" onclick="updateZoom(-5)"><i data-lucide="minus"></i></button>
-    <div id="capture-shutter" class="action-btn" onclick="takePhoto()"></div>
-    <button class="action-btn" onclick="updateZoom(5)"><i data-lucide="plus"></i></button>
-    <button class="action-btn" id="ai-voice" onclick="toggleVoice()"><i data-lucide="mic"></i></button>
+<div id="audio-panel" class="ui-layer">
+    FREQUENCY:<br><b id="freq-val">0 Hz</b><br><br>
+    PEAK:<br><b id="peak-val">0 dB</b><br><br>
+    ZONE:<br><b id="zone-val">IDLE</b>
+</div>
+
+<div id="controls" class="ui-layer" style="position: absolute; bottom: 0;">
+    <button class="btn" onclick="toggleZoom(-5)"><i data-lucide="zoom-out"></i></button>
+    <div id="main-btn" class="btn" onclick="initAudio()">🎙️</div>
+    <button class="btn" onclick="toggleZoom(5)"><i data-lucide="zoom-in"></i></button>
 </div>
 
 <script>
     lucide.createIcons();
-    const video = document.getElementById('video-feed');
-    const canvas = document.getElementById('canvas-overlay');
-    const ctx = canvas.getContext('2d');
-    const err = document.getElementById('error-msg');
+    const video = document.getElementById('video');
+    const fCanvas = document.getElementById('freq-canvas');
+    const fCtx = fCanvas.getContext('2d');
+    let audioCtx, analyser, dataArray, zoom = 1.0;
 
-    let currentZoom = 1.0;
-    let userLat = null, userLon = null;
-    let currentHeading = 0;
-    let filterIndex = 0;
-    const filters = ['none', 'sepia(1) hue-rotate(90deg) brightness(1.5) contrast(1.2)', 'invert(1) hue-rotate(180deg) brightness(1.2)'];
+    async function init() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" }, width: { ideal: 3840 } },
+            audio: true
+        });
+        video.srcObject = stream;
+        
+        navigator.geolocation.getCurrentPosition(p => {
+            document.getElementById('lat').innerText = p.coords.latitude.toFixed(4);
+            document.getElementById('lon').innerText = p.coords.longitude.toFixed(4);
+        });
 
-    async function initializeSystem() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { exact: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } }
-            });
-            video.srcObject = stream;
+        render();
+    }
+
+    async function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const stream = video.srcObject;
+            const source = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            source.connect(analyser);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            document.getElementById('status').innerText = "AUDIO ANALYSIS: RUNNING";
+        }
+    }
+
+    function render() {
+        // Frequency Visualizer
+        if (analyser) {
+            fCanvas.width = window.innerWidth;
+            fCanvas.height = 150;
+            analyser.getByteFrequencyData(dataArray);
             
-            navigator.geolocation.getCurrentPosition(pos => {
-                userLat = pos.coords.latitude;
-                userLon = pos.coords.longitude;
-                document.getElementById('loc-data').innerText = `${userLat.toFixed(2)}N, ${userLon.toFixed(2)}E`;
-            }, () => { err.style.display = 'block'; });
+            fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
+            fCtx.beginPath();
+            fCtx.strokeStyle = '#00f2ff';
+            fCtx.lineWidth = 2;
+            
+            let sliceWidth = fCanvas.width / dataArray.length;
+            let x = 0;
+            let maxVal = 0;
+            let maxIdx = 0;
 
-            window.addEventListener('deviceorientation', e => {
-                currentHeading = e.webkitCompassHeading || (360 - e.alpha);
-                document.getElementById('az-data').innerText = Math.round(currentHeading) + "°";
-            });
+            for (let i = 0; i < dataArray.length; i++) {
+                let v = dataArray[i] / 128.0;
+                let y = v * fCanvas.height / 2;
+                
+                if (dataArray[i] > maxVal) {
+                    maxVal = dataArray[i];
+                    maxIdx = i;
+                }
 
-            loop();
-        } catch (e) { err.style.display = 'block'; }
+                if (i === 0) fCtx.moveTo(x, fCanvas.height - y);
+                else fCtx.lineTo(x, fCanvas.height - y);
+                x += sliceWidth;
+            }
+            fCtx.stroke();
+            
+            const hz = Math.round(maxIdx * audioCtx.sampleRate / analyser.fftSize);
+            document.getElementById('freq-val').innerText = hz + " Hz";
+            document.getElementById('peak-val').innerText = maxVal + " dB";
+            
+            // Frequency Zoning AI
+            let zone = "NORMAL";
+            if (hz > 15000) zone = "ULTRASONIC";
+            else if (hz < 50) zone = "INFRASONIC";
+            else if (hz > 2000 && hz < 4000) zone = "VOICE";
+            document.getElementById('zone-val').innerText = zone;
+        }
+
+        requestAnimationFrame(render);
     }
 
-    function loop() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        const drawW = canvas.width / currentZoom;
-        const drawH = canvas.height / currentZoom;
-        const startX = (canvas.width - drawW) / 2;
-        const startY = (canvas.height - drawH) / 2;
-        
-        ctx.drawImage(video, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(loop);
+    function toggleZoom(amt) {
+        zoom = Math.max(1, Math.min(50, zoom + amt));
+        video.style.transform = `scale(${zoom})`;
     }
 
-    function updateZoom(step) {
-        currentZoom = Math.max(1, Math.min(100, currentZoom + step/10));
-        document.getElementById('mag-data').innerText = currentZoom.toFixed(1) + "x";
-    }
-
-    function cycleMode() {
-        filterIndex = (filterIndex + 1) % filters.length;
-        video.style.filter = filters[filterIndex];
-        document.getElementById('mode-night').classList.toggle('active', filterIndex !== 0);
-    }
-
-    function toggleVoice() {
-        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Speech) return;
-        const rec = new Speech();
-        rec.lang = 'tr-TR';
-        rec.onresult = (e) => {
-            const cmd = e.results[0][0].transcript.toLowerCase();
-            if (cmd.includes("yaklaş") || cmd.includes("zoom")) updateZoom(30);
-            if (cmd.includes("uzaklaş")) updateZoom(-30);
-            if (cmd.includes("çek") || cmd.includes("foto")) takePhoto();
-            if (cmd.includes("mod")) cycleMode();
-        };
-        rec.start();
-        document.getElementById('ai-voice').classList.add('active');
-        setTimeout(() => document.getElementById('ai-voice').classList.remove('active'), 3000);
-    }
-
-    function takePhoto() {
-        const link = document.createElement('a');
-        link.download = `Nebula_Capture_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    }
-
-    window.onload = initializeSystem;
+    window.onload = init;
 </script>
 </body>
 </html>
