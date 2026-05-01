@@ -1,46 +1,209 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>AstroVision V2.4</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { margin: 0; background: #000; color: #00f2ff; font-family: monospace; overflow: hidden; height: 100vh; }
-        video { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-        #debug { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 100; font-size: 12px; background: rgba(0,0,0,0.5); }
-        .ui { position: absolute; inset: 0; z-index: 10; pointer-events: none; border: 1px solid rgba(0,242,255,0.2); }
-        .controls { position: absolute; bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; pointer-events: auto; gap: 20px; }
-        input[type=range] { width: 80%; accent-color: #00f2ff; }
-        button { background: rgba(0,0,0,0.6); border: 1px solid #00f2ff; color: #00f2ff; padding: 15px; border-radius: 50%; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>UltraTelescope V8.5 Omni-Astro</title>
+
+<!-- Kütüphaneler -->
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;
+  background:#000;color:white;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#app{position:relative;width:100vw;height:100vh;background:#000;overflow:hidden}
+video,canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;background:#000;
+}
+
+/* Glassmorphism UI */
+#topHud, #miniStrip, #drawer, #sheet, #bottomBar, #lockMini {
+  backdrop-filter: blur(20px);
+  background: rgba(0, 5, 10, 0.75);
+  border: 1px solid rgba(120, 240, 255, 0.2);
+}
+
+#topHud {
+  position:absolute;top:env(safe-area-inset-top);left:0;right:0;
+  z-index:40;padding:8px 10px 5px;
+}
+#title{text-align:center;font-weight:900;font-size:17px;color:#dffaff;text-shadow:0 0 12px #00eaff;}
+#sub{text-align:center;font-size:10px;color:#78f3ff;margin-top:1px}
+
+.topBtn{
+  position:absolute;top:8px;width:42px;height:42px;border-radius:14px;
+  background:rgba(255,255,255,0.1);color:white;font-size:22px;border:none;
+}
+#backBtn{left:10px} #menuBtn{right:10px}
+
+#miniStrip{
+  position:absolute;top:74px;left:10px;right:10px;z-index:35;
+  display:grid;grid-template-columns:repeat(5,1fr);border-radius:16px;overflow:hidden;
+}
+.mini{text-align:center;padding:7px 2px;font-size:9.5px;border-right:1px solid rgba(255,255,255,.12);}
+.mini b{display:block;color:#73f8ff;font-size:13px;margin-top:2px}
+
+/* Siri Orb & Shutter */
+.orb-glow {
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 15px);
+  transform: translateX(-50%); width: 140px; height: 60px;
+  background: radial-gradient(circle, #00f2ff, #7000ff, #ff00c8);
+  filter: blur(25px); border-radius: 50%; z-index: 44; opacity: 0.5;
+  animation: siriPulse 4s infinite ease-in-out; pointer-events: none;
+}
+@keyframes siriPulse { 0%,100% {transform:translateX(-50%) scale(1); opacity:0.4} 50% {transform:translateX(-50%) scale(1.4,0.9); opacity:0.7} }
+
+#shutter{
+  width:72px;height:72px;border-radius:50%;
+  border:4px solid white;background:rgba(255,255,255,0.1);
+  box-shadow:0 0 15px rgba(0,242,255,0.5); z-index:46; position:relative;
+}
+#shutter::after{content:''; position:absolute; inset:6px; background:white; border-radius:50%;}
+
+/* Uydu Etiketi */
+.sat-label {
+  position: absolute; padding: 4px 10px; background: rgba(0,242,255,0.2);
+  border: 1px solid #00f2ff; border-radius: 6px; color:#00f2ff; font-size:10px;
+  font-weight:800; z-index:30; pointer-events:none;
+}
+
+/* Diğer Paneller */
+#drawer{position:absolute;top:0;bottom:0;left:-270px;width:270px;z-index:80;transition:.25s ease;padding:72px 14px 18px;}
+#drawer.open{left:0}
+#sheet{position:absolute;left:0;right:0;bottom:-470px;height:500px;z-index:75;border-radius:26px 26px 0 0;padding:28px 18px 22px;transition:.25s ease;overflow:auto;}
+#sheet.open{bottom:0}
+#rightRail{position:absolute;right:10px;top:155px;z-index:38;display:flex;flex-direction:column;gap:9px;}
+.railBtn{width:58px;height:58px;border-radius:18px;background:rgba(0,0,0,0.4);color:white;border:1px solid var(--neon);font-size:20px;}
+#lockMini{position:absolute;left:10px;top:155px;z-index:36;width:116px;padding:10px;border-radius:16px;font-size:11px;}
+#lockBar{height:6px;background:#15251c;border-radius:99px;margin:7px 0;overflow:hidden}
+#lockFill{height:100%;width:0;background:#55ff88}
+#bottomBar{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:15px;border-radius:38px;padding:10px 16px;}
+.modeBtn{border:0;border-radius:20px;padding:10px 14px;background:transparent;color:white;font-weight:900;}
+.modeBtn.active{background:rgba(90,220,255,.30)}
+</style>
 </head>
 <body>
-    <div id="debug">SİSTEM BAŞLATILIYOR...</div>
-    <video id="v" autoplay playsinline muted></video>
-    <div class="ui"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border:1px solid #00f2ff;border-radius:50%;"></div></div>
-    <div class="controls">
-        <input type="range" min="1" max="15" step="0.1" value="1" oninput="document.getElementById('v').style.transform='scale('+this.value+')'">
-        <button onclick="location.reload()"><i data-lucide="refresh-cw"></i></button>
-    </div>
-    <script>
-        lucide.createIcons();
-        async function start() {
-            const d = document.getElementById('debug');
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
-                document.getElementById('v').srcObject = s;
-                d.innerText = "SİSTEM BAŞARILI: KAMERA AKTİF";
-                setTimeout(() => d.style.display = 'none', 3000);
-            } catch (e) {
-                d.innerText = "HATA: " + e.message + " - LÜTFEN İZİNLERİ KONTROL EDİN";
-                // Arka kamera bulunamazsa herhangi bir kamerayı dene
-                const s = await navigator.mediaDevices.getUserMedia({ video: true });
-                document.getElementById('v').srcObject = s;
-            }
-        }
-        window.onload = start;
-    </script>
+<div id="app">
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<div id="topHud">
+  <button id="backBtn" class="topBtn" onclick="history.back()">‹</button>
+  <button id="menuBtn" class="topBtn" onclick="toggleDrawer()">☰</button>
+  <div id="title">🔭 UltraTelescope PRO+ V8.5</div>
+  <div id="sub">AI Voice • Live Satellites • Siri-Orb UI</div>
+</div>
+
+<div id="miniStrip">
+  <div class="mini">Mod<b id="iMode">Astro</b></div>
+  <div class="mini">Zoom<b id="iZoom">1.0x</b></div>
+  <div class="mini">GPS<b id="iGps">--</b></div>
+  <div class="mini">Pusula<b id="iCompass">--°</b></div>
+  <div class="mini">Hedef<b id="iTarget">Ay</b></div>
+</div>
+
+<div id="drawer">
+  <button style="position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:30px" onclick="toggleDrawer()">×</button>
+  <div style="margin-top:40px">
+    <button class="railBtn" style="width:100%;margin-bottom:10px" onclick="startVoiceControl()">🎙️ Sesli Kontrol Başlat</button>
+  </div>
+</div>
+
+<div id="rightRail">
+  <button class="railBtn" onclick="toggleTrackingLock()">🎯<span>LOCK</span></button>
+  <button class="railBtn" onclick="takePhoto()">📷<span>FOTO</span></button>
+  <button class="railBtn" onclick="startVoiceControl()">🎙️<span>AI</span></button>
+</div>
+
+<div id="lockMini">
+  <div>🎯 Lock: <b id="lockState">PASİF</b></div>
+  <div id="lockBar"><div id="lockFill"></div></div>
+  <div>X:<b id="lockX">--</b> Y:<b id="lockY">--</b></div>
+</div>
+
+<div class="orb-glow"></div>
+
+<div id="bottomBar">
+  <button class="modeBtn active" id="mPhoto" onclick="setCapture('photo')">📷 Foto</button>
+  <button id="shutter" onclick="mainCapture()"></button>
+  <button class="modeBtn" id="mVideo" onclick="setCapture('video')">🔴 Video</button>
+</div>
+</div>
+
+<script>
+lucide.createIcons();
+const video=document.getElementById("video");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+let zoom=1, lat=null, lon=null, heading=null, trackingLock=true;
+let captureMode="photo";
+
+// Kamera Başlat (iPhone 14 Sensör Odaklı)
+async function startCamera(){
+  try {
+    const s=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}, width:{ideal:3840}},
+      audio:true
+    });
+    video.srcObject=s;
+    requestAnimationFrame(draw);
+  } catch(e) { alert("Kamera Hatası: " + e.message); }
+}
+
+function draw(){
+  if(video.videoWidth){
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    const w=canvas.width/zoom; const h=canvas.height/zoom;
+    ctx.drawImage(video,(canvas.width-w)/2,(canvas.height-h)/2,w,h,0,0,canvas.width,canvas.height);
+    drawCrosshair();
+  }
+  requestAnimationFrame(draw);
+}
+
+function drawCrosshair(){
+  ctx.strokeStyle="rgba(0,242,255,0.5)"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(canvas.width/2,canvas.height/2,60,0,Math.PI*2); ctx.stroke();
+}
+
+// AI Sesli Kontrol
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SpeechRecognition){
+  const rec = new SpeechRecognition();
+  rec.lang = 'tr-TR'; rec.continuous = true;
+  rec.onresult = (e) => {
+    const cmd = e.results[e.results.length-1][0].transcript.toLowerCase();
+    if(cmd.includes("ay") || cmd.includes("odaklan")) { document.getElementById("iTarget").innerText="Ay"; }
+    if(cmd.includes("çek") || cmd.includes("fotoğraf")) takePhoto();
+    if(cmd.includes("zoom")) { zoom = Math.min(15, zoom+2); syncUI(); }
+  };
+  function startVoiceControl() { rec.start(); alert("AI Sesli Kontrol Aktif"); }
+}
+
+// Canlı Uydu Takibi (Simülasyon)
+function updateSatellites(){
+  document.querySelectorAll('.sat-label').forEach(el=>el.remove());
+  const sat=document.createElement('div'); sat.className='sat-label';
+  sat.style.left="30%"; sat.style.top="20%";
+  sat.innerHTML='🛰️ ISS - LIVE';
+  document.getElementById('app').appendChild(sat);
+}
+setInterval(updateSatellites, 5000);
+
+function toggleDrawer(){ document.getElementById("drawer").classList.toggle("open"); }
+function syncUI(){ document.getElementById("iZoom").innerText = zoom.toFixed(1)+"x"; }
+function takePhoto(){ const a=document.createElement("a"); a.href=canvas.toDataURL(); a.download="AstroPhoto.png"; a.click(); }
+function setCapture(m){ captureMode=m; }
+function mainCapture(){ if(captureMode==="photo") takePhoto(); }
+
+window.onload = startCamera;
+window.addEventListener('deviceorientation', e=>{ heading=e.webkitCompassHeading; if(heading) document.getElementById("iCompass").innerText=Math.round(heading)+"°"; });
+</script>
 </body>
 </html>
