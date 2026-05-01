@@ -1,181 +1,470 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-    <title>AstroVision V12 - Astro-Sonic Ultimate</title>
-    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root { --neon: #00f2ff; --purple: #7000ff; --glass: rgba(0, 10, 20, 0.85); }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
-        
-        /* layers */
-        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.8; transition: transform 0.2s; }
-        #overlay-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        
-        /* UI HUD */
-        .ui-layer { position: absolute; z-index: 10; pointer-events: auto; width: 100%; }
-        #top-hud { top: env(safe-area-inset-top); padding: 15px; display: flex; justify-content: space-between; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); }
-        
-        /* Siri Orb */
-        .siri-orb { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 220px; height: 90px; background: radial-gradient(circle, var(--neon), var(--purple), #ff00c8); filter: blur(35px); border-radius: 50%; z-index: 3; opacity: 0.4; animation: pulse 4s infinite; }
-        
-        /* AI Panel */
-        #ai-panel { position: absolute; top: 100px; right: 15px; width: 160px; background: var(--glass); padding: 15px; border-radius: 15px; border: 1px solid var(--neon); font-family: monospace; font-size: 10px; }
-        .ai-comment { color: yellow; margin-top: 8px; font-style: italic; border-top: 1px solid rgba(0,242,255,0.2); padding-top: 5px; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+<title>Astro-Sonic Explorer PRO V13</title>
 
-        /* Controls */
-        #controls { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 20px); width: 100%; display: flex; justify-content: center; align-items: center; gap: 25px; z-index: 20; }
-        .btn { width: 55px; height: 55px; border-radius: 50%; background: var(--glass); border: 1px solid var(--neon); color: white; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        #shutter { width: 80px; height: 80px; border: 5px solid #fff; }
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
-        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; } 50% { transform: translateX(-50%) scale(1.4, 0.8); opacity: 0.6; } }
-    </style>
+<style>
+:root{
+  --cyan:#00f2ff;
+  --green:#00ff88;
+  --red:#ff2d55;
+  --yellow:#ffe66d;
+  --glass:rgba(0,10,20,.78);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#video{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  z-index:1;transform-origin:center center;transition:.12s linear;
+}
+#canvas{
+  position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;
+}
+#start{
+  position:absolute;inset:0;z-index:99;background:radial-gradient(circle at center,#062331,#000 72%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;
+}
+#start h1{font-size:28px;color:var(--cyan);text-shadow:0 0 18px var(--cyan);margin-bottom:12px}
+#start p{font-size:14px;line-height:1.5;opacity:.85;margin-bottom:24px}
+#start button{
+  border:1px solid var(--cyan);border-radius:18px;padding:16px 25px;
+  color:white;background:rgba(0,242,255,.14);font-size:16px;font-weight:900;
+  box-shadow:0 0 25px rgba(0,242,255,.35);
+}
+.hud{position:absolute;z-index:20;pointer-events:none}
+#top{
+  top:env(safe-area-inset-top);left:0;width:100%;padding:14px 15px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  background:linear-gradient(to bottom,rgba(0,0,0,.9),transparent);
+}
+.logo{font-size:15px;font-weight:900;text-shadow:0 0 10px var(--cyan)}
+.sub{font-size:10px;color:var(--cyan);margin-top:3px}
+.data{text-align:right;font-family:monospace;font-size:10px;line-height:1.45;color:var(--cyan)}
+.panel{
+  background:var(--glass);border:1px solid rgba(0,242,255,.55);border-radius:16px;
+  padding:11px;backdrop-filter:blur(12px);font-family:monospace;font-size:10px;line-height:1.48;
+  box-shadow:0 0 18px rgba(0,242,255,.14);
+}
+#left{top:92px;left:10px;width:128px}
+#ai{top:92px;right:10px;width:185px}
+#aiMsg{margin-top:8px;padding-top:7px;border-top:1px solid rgba(0,242,255,.25);color:var(--yellow);font-style:italic}
+#zoomLabel{
+  position:absolute;z-index:24;bottom:calc(env(safe-area-inset-bottom) + 112px);left:50%;
+  transform:translateX(-50%);background:rgba(0,0,0,.58);border:1px solid rgba(0,242,255,.45);
+  border-radius:20px;padding:7px 14px;font-family:monospace;font-size:12px;color:var(--cyan);
+}
+#controls{
+  position:absolute;z-index:30;bottom:calc(env(safe-area-inset-bottom) + 18px);left:0;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:15px;pointer-events:auto;
+}
+.btn{
+  width:54px;height:54px;border-radius:50%;border:1px solid var(--cyan);background:var(--glass);
+  color:white;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);
+  box-shadow:0 0 14px rgba(0,242,255,.22);font-weight:900;
+}
+#micBtn{width:74px;height:74px;border:4px solid white;font-size:24px}
+.active{border-color:var(--green)!important;box-shadow:0 0 25px rgba(0,255,136,.55)!important}
+#modeBar{
+  position:absolute;z-index:29;top:calc(env(safe-area-inset-top) + 52px);left:50%;transform:translateX(-50%);
+  display:flex;gap:7px;pointer-events:auto;
+}
+.chip{
+  font-size:10px;font-weight:800;color:white;background:rgba(0,10,20,.72);
+  border:1px solid rgba(0,242,255,.4);border-radius:20px;padding:8px 10px;backdrop-filter:blur(10px);
+}
+.chip.on{background:rgba(0,242,255,.22);border-color:var(--cyan)}
+.orb{
+  position:absolute;z-index:3;bottom:35px;left:50%;width:220px;height:84px;border-radius:50%;
+  transform:translateX(-50%);background:radial-gradient(circle,var(--cyan),#7000ff,#ff00c8);
+  filter:blur(36px);opacity:.32;animation:pulse 3.5s infinite;
+}
+@keyframes pulse{
+  0%,100%{transform:translateX(-50%) scale(1);opacity:.28}
+  50%{transform:translateX(-50%) scale(1.35,.78);opacity:.55}
+}
+</style>
 </head>
+
 <body>
 
+<div id="start">
+  <h1>ASTRO-SONIC EXPLORER PRO V13</h1>
+  <p>
+    Gerçek cihaz sensörleriyle çalışır: kamera, mikrofon, GPS, pusula ve gökyüzü takibi.<br><br>
+    Not: Termal kamera ve gerçek ultrason/infrason için harici donanım gerekir. Bu sürüm telefon sensörlerini maksimum kullanır.
+  </p>
+  <button onclick="startSystem()">SİSTEMİ BAŞLAT</button>
+</div>
+
 <video id="video" autoplay playsinline muted></video>
-<canvas id="overlay-canvas"></canvas>
-<div class="siri-orb"></div>
+<canvas id="canvas"></canvas>
+<div class="orb"></div>
 
-<div id="top-hud" class="ui-layer">
-    <div>
-        <div style="font-weight: 900; font-size: 16px; text-shadow: 0 0 10px var(--neon);">ASTRO-SONIC V12</div>
-        <div id="target-id" style="color: var(--neon); font-size: 10px;">HEDEF: ARANIYOR...</div>
-    </div>
-    <div style="text-align: right; font-size: 10px; color: var(--neon);">
-        AZ: <span id="az-val">--</span>° | ALT: <span id="alt-val">--</span>°<br>
-        GPS: <span id="gps-stat">LOCKED</span>
-    </div>
+<div id="top" class="hud">
+  <div>
+    <div class="logo">ASTRO-SONIC EXPLORER PRO</div>
+    <div class="sub" id="targetText">HEDEF: ARANIYOR...</div>
+  </div>
+  <div class="data">
+    AZ: <span id="az">--</span>°<br>
+    ALT: <span id="alt">--</span>°<br>
+    GPS: <span id="gps">BEKLENİYOR</span>
+  </div>
 </div>
 
-<div id="ai-panel" class="ui-layer">
-    <b>SCANNER DATA</b><br>
-    FREQ: <span id="f-val">0 Hz</span><br>
-    ZONE: <span id="z-val">IDLE</span><br>
-    <div class="ai-comment" id="ai-msg">AI: Ortam analizi bekleniyor...</div>
+<div id="modeBar">
+  <button class="chip on" id="normalChip" onclick="setMode('normal')">NORMAL</button>
+  <button class="chip" id="nightChip" onclick="setMode('night')">NIGHT</button>
+  <button class="chip" id="thermalChip" onclick="setMode('thermal')">THERMAL*</button>
 </div>
 
-<div id="controls" class="ui-layer">
-    <button class="btn" onclick="adjustZoom(-5)"><i data-lucide="zoom-out"></i></button>
-    <div id="shutter" class="btn" onclick="toggleAudio()">🎙️</div>
-    <button class="btn" onclick="adjustZoom(5)"><i data-lucide="zoom-in"></i></button>
+<div id="left" class="hud panel">
+  MODE: <span id="modeText">NORMAL</span><br>
+  ZOOM: <span id="zoomMini">1.0x</span><br>
+  CAMERA: LIVE<br>
+  SKY: TRACKING<br>
+  LOCK: <span id="lockText">OFF</span>
+</div>
+
+<div id="ai" class="hud panel">
+  <b>AI KAŞİF MOTORU</b><br>
+  FREQ: <span id="freq">0 Hz</span><br>
+  BAND: <span id="band">IDLE</span><br>
+  PEAK: <span id="peak">0</span><br>
+  TARGET: <span id="aiTarget">---</span>
+  <div id="aiMsg">AI: Başlatma bekleniyor...</div>
+</div>
+
+<div id="zoomLabel">1.0x</div>
+
+<div id="controls">
+  <button class="btn" onclick="zoomStep(-0.5)"><i data-lucide="zoom-out"></i></button>
+  <button class="btn" onclick="takePhoto()"><i data-lucide="camera"></i></button>
+  <button class="btn" id="micBtn" onclick="toggleMic()">🎙️</button>
+  <button class="btn" onclick="toggleLock()"><i data-lucide="crosshair"></i></button>
+  <button class="btn" onclick="zoomStep(0.5)"><i data-lucide="zoom-in"></i></button>
 </div>
 
 <script>
-    lucide.createIcons();
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('overlay-canvas');
-    const ctx = canvas.getContext('2d');
-    let zoom = 1.0, lat, lon, heading = 0, audioCtx, analyser, dataArray;
+lucide.createIcons();
 
-    async function init() {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: "environment" }, width: { ideal: 3840 } },
-            audio: true
-        });
-        video.srcObject = stream;
-        
-        navigator.geolocation.getCurrentPosition(p => {
-            lat = p.coords.latitude; lon = p.coords.longitude;
-            document.getElementById('gps-stat').innerText = "LAT: " + lat.toFixed(2);
-        });
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-        window.addEventListener('deviceorientation', e => {
-            heading = e.webkitCompassHeading || 360 - e.alpha;
-            document.getElementById('az-val').innerText = Math.round(heading);
-            updateCelestialMath();
-        });
+let stream=null,audioCtx=null,analyser=null,dataArray=null;
+let micActive=false,locked=false;
+let lat=null,lon=null,heading=0,tilt=0,zoom=1,mode="normal";
+let currentTarget="---",currentAlt=0,currentAz=0;
+const targets=["Moon","Venus","Mars","Jupiter","Saturn"];
 
-        render();
+async function startSystem(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:"environment"},
+        width:{ideal:3840},
+        height:{ideal:2160}
+      },
+      audio:{
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false
+      }
+    });
+
+    video.srcObject=stream;
+
+    if(typeof DeviceOrientationEvent!=="undefined" &&
+       typeof DeviceOrientationEvent.requestPermission==="function"){
+      try{ await DeviceOrientationEvent.requestPermission(); }catch(e){}
     }
 
-    async function toggleAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioCtx.createMediaStreamSource(video.srcObject);
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 1024;
-            source.connect(analyser);
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-            document.getElementById('ai-msg').innerText = "AI: Dinleme aktif. Frekanslar taranıyor.";
-        }
+    window.addEventListener("deviceorientation",onOrientation,true);
+
+    navigator.geolocation.getCurrentPosition(p=>{
+      lat=p.coords.latitude;
+      lon=p.coords.longitude;
+      document.getElementById("gps").innerText="LOCK";
+    },()=>{
+      document.getElementById("gps").innerText="YOK";
+    },{enableHighAccuracy:true,timeout:10000});
+
+    document.getElementById("start").style.display="none";
+    say("Kamera aktif. Gökbilim ve frekans analiz sistemi hazır.");
+    render();
+  }catch(e){
+    alert("İzin alınamadı: "+e.message);
+  }
+}
+
+function onOrientation(e){
+  heading=e.webkitCompassHeading || (e.alpha!==null ? 360-e.alpha : heading);
+  tilt=e.beta || 0;
+  document.getElementById("az").innerText=Math.round(heading);
+  scanSky();
+}
+
+function scanSky(){
+  if(lat===null || lon===null || typeof Astronomy==="undefined")return;
+
+  const now=new Date();
+  const obs=new Astronomy.Observer(lat,lon,0);
+  let best=null,bestScore=999;
+
+  for(const body of targets){
+    try{
+      const equ=Astronomy.Equator(body,now,obs,true,true);
+      const hor=Astronomy.Horizon(now,obs,equ.ra,equ.dec,"normal");
+      const azDiff=Math.abs(norm(hor.azimuth-heading));
+      const altDiff=Math.abs(hor.altitude-tilt);
+      const score=azDiff+altDiff;
+
+      if(hor.altitude>0 && score<bestScore){
+        bestScore=score;
+        best={body,az:hor.azimuth,alt:hor.altitude,score};
+      }
+    }catch(e){}
+  }
+
+  if(best && best.score<38){
+    currentTarget=trName(best.body);
+    currentAz=best.az;
+    currentAlt=best.alt;
+    document.getElementById("targetText").innerText="HEDEF: "+currentTarget;
+    document.getElementById("aiTarget").innerText=currentTarget;
+    document.getElementById("alt").innerText=Math.round(best.alt);
+  }else if(!locked){
+    currentTarget="---";
+    document.getElementById("targetText").innerText="HEDEF: ARANIYOR...";
+    document.getElementById("aiTarget").innerText="---";
+  }
+}
+
+function norm(a){return ((a+540)%360)-180}
+function trName(n){
+  return {Moon:"AY",Venus:"VENÜS",Mars:"MARS",Jupiter:"JÜPİTER",Saturn:"SATÜRN"}[n] || n.toUpperCase();
+}
+
+async function toggleMic(){
+  if(!stream)return;
+
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const source=audioCtx.createMediaStreamSource(stream);
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=2048;
+    analyser.smoothingTimeConstant=.72;
+    source.connect(analyser);
+    dataArray=new Uint8Array(analyser.frequencyBinCount);
+  }
+
+  if(audioCtx.state==="suspended")await audioCtx.resume();
+
+  micActive=!micActive;
+  document.getElementById("micBtn").classList.toggle("active",micActive);
+  say(micActive ? "Sonic Voyager aktif. Çevresel frekanslar analiz ediliyor." : "Ses analizi duraklatıldı.");
+}
+
+function analyzeAudio(){
+  if(!micActive || !analyser || !dataArray)return;
+
+  analyser.getByteFrequencyData(dataArray);
+  let max=0,index=0;
+  for(let i=1;i<dataArray.length;i++){
+    if(dataArray[i]>max){max=dataArray[i];index=i;}
+  }
+
+  const hz=Math.round(index*audioCtx.sampleRate/analyser.fftSize);
+  document.getElementById("freq").innerText=hz+" Hz";
+  document.getElementById("peak").innerText=max;
+
+  let band="NORMAL";
+  let msg="Normal ortam sesi. Belirgin özel sinyal yok.";
+
+  if(hz>14000 && max>25){
+    band="HIGH";
+    msg="Çok yüksek frekanslı tiz sinyal. Elektronik cihaz, böcek, metalik sürtünme veya çevresel tiz kaynak olabilir.";
+  }else if(hz<80 && max>45){
+    band="LOW";
+    msg="Düşük frekanslı titreşim. Motor, rüzgar, yapı titreşimi veya temas kaynaklı uğultu olabilir.";
+  }else if(hz>1000 && hz<7000 && max>55){
+    band="BIO/SHARP";
+    msg="Canlı kaynaklı olabilecek keskin tekrar eden ses. Kuş, böcek veya küçük hayvan aktivitesi ihtimali var.";
+  }else if(hz>=80 && hz<=300 && max>55){
+    band="HUM";
+    msg="Kalın uğultu. Fan, motor, elektriksel titreşim veya mekanik kaynak olabilir.";
+  }
+
+  if(currentTarget!=="---"){
+    msg += " Gökyüzü hedefi: "+currentTarget+". Gözlem için telefonu sabit tut, zoomu aşırı yükseltme.";
+  }
+
+  document.getElementById("band").innerText=band;
+  say(msg);
+}
+
+function say(t){
+  document.getElementById("aiMsg").innerText="AI: "+t;
+}
+
+function zoomStep(v){
+  zoom=Math.max(1,Math.min(40,zoom+v));
+  video.style.transform=`scale(${zoom})`;
+  document.getElementById("zoomLabel").innerText=zoom.toFixed(1)+"x";
+  document.getElementById("zoomMini").innerText=zoom.toFixed(1)+"x";
+}
+
+function toggleLock(){
+  locked=!locked;
+  document.getElementById("lockText").innerText=locked?"ON":"OFF";
+  say(locked ? "Hedef kilidi aktif. Nişangah merkezini seçili hedefte tutmaya çalış." : "Hedef kilidi kapalı.");
+}
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));
+  document.getElementById(m+"Chip").classList.add("on");
+  document.getElementById("modeText").innerText=m.toUpperCase();
+
+  if(m==="normal"){
+    video.style.filter="contrast(1.08) saturate(1.08)";
+    say("Normal optik gözlem modu aktif.");
+  }
+  if(m==="night"){
+    video.style.filter="brightness(1.65) contrast(1.45) saturate(.45) hue-rotate(75deg)";
+    say("Düşük ışık iyileştirme modu aktif. Gerçek gece görüş değil, görüntü güçlendirmedir.");
+  }
+  if(m==="thermal"){
+    video.style.filter="contrast(2) saturate(2.4) hue-rotate(160deg)";
+    say("Termal görselleştirme simülasyonu aktif. Gerçek ısı ölçümü için harici termal kamera gerekir.");
+  }
+}
+
+function takePhoto(){
+  const c=document.createElement("canvas");
+  c.width=video.videoWidth || window.innerWidth;
+  c.height=video.videoHeight || window.innerHeight;
+  const x=c.getContext("2d");
+  x.drawImage(video,0,0,c.width,c.height);
+  const a=document.createElement("a");
+  a.href=c.toDataURL("image/png");
+  a.download="astro-sonic-capture.png";
+  a.click();
+  say("Fotoğraf kaydedildi.");
+}
+
+function render(){
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  drawCrosshair();
+  drawCompass();
+  drawSkyMarks();
+  drawAudioWave();
+  analyzeAudio();
+
+  requestAnimationFrame(render);
+}
+
+function drawCrosshair(){
+  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2;
+
+  ctx.save();
+  ctx.strokeStyle="rgba(0,242,255,.92)";
+  ctx.lineWidth=1.3;
+  ctx.shadowColor="#00f2ff";
+  ctx.shadowBlur=12;
+
+  ctx.beginPath();
+  ctx.arc(cx,cy,94,0,Math.PI*2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx-130,cy);ctx.lineTo(cx-30,cy);
+  ctx.moveTo(cx+30,cy);ctx.lineTo(cx+130,cy);
+  ctx.moveTo(cx,cy-130);ctx.lineTo(cx,cy-30);
+  ctx.moveTo(cx,cy+30);ctx.lineTo(cx,cy+130);
+  ctx.stroke();
+
+  ctx.fillStyle=locked ? "#00ff88" : "#00f2ff";
+  ctx.font="bold 11px monospace";
+  ctx.textAlign="center";
+  ctx.fillText(locked?"TARGET LOCK":"AR SCAN",cx,cy+124);
+
+  if(currentTarget!=="---"){
+    ctx.fillStyle="#ffe66d";
+    ctx.font="bold 15px monospace";
+    ctx.fillText(currentTarget,cx,cy-108);
+  }
+
+  ctx.restore();
+}
+
+function drawCompass(){
+  const w=canvas.width;
+  ctx.save();
+  ctx.font="11px monospace";
+  ctx.textAlign="center";
+  ctx.fillStyle="rgba(0,242,255,.88)";
+  const dirs=[{d:0,t:"N"},{d:90,t:"E"},{d:180,t:"S"},{d:270,t:"W"}];
+
+  for(const item of dirs){
+    const diff=norm(item.d-heading);
+    const x=w/2+diff*3;
+    if(x>-30 && x<w+30){
+      ctx.fillText(item.t,x,70);
+      ctx.beginPath();
+      ctx.moveTo(x,76);ctx.lineTo(x,86);
+      ctx.strokeStyle="rgba(0,242,255,.6)";
+      ctx.stroke();
     }
+  }
+  ctx.restore();
+}
 
-    function updateCelestialMath() {
-        if(!lat || !lon) return;
-        const now = new Date();
-        const obs = new Astronomy.Observer(lat, lon, 0);
-        const bodies = ['Moon', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
-        
-        bodies.forEach(body => {
-            const equ = Astronomy.Equator(body, now, obs, true, true);
-            const hor = Astronomy.Horizon(now, obs, equ.ra, equ.dec, 'normal');
-            if(Math.abs(hor.azimuth - heading) < 15 && hor.altitude > 0) {
-                document.getElementById('target-id').innerText = "HEDEF: " + body.toUpperCase();
-                document.getElementById('alt-val').innerText = Math.round(hor.altitude);
-            }
-        });
-    }
+function drawSkyMarks(){
+  ctx.save();
+  ctx.fillStyle="rgba(255,255,255,.38)";
+  for(let i=0;i<45;i++){
+    const x=(i*89+heading*2.2)%canvas.width;
+    const y=120+((i*47)%Math.max(200,canvas.height-330));
+    ctx.fillRect(x,y,1.15,1.15);
+  }
+  ctx.restore();
+}
 
-    function render() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        ctx.clearRect(0,0, canvas.width, canvas.height);
+function drawAudioWave(){
+  if(!micActive || !analyser || !dataArray)return;
 
-        // Crosshair
-        ctx.strokeStyle = '#00f2ff';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(canvas.width/2, canvas.height/2, 100, 0, Math.PI*2);
-        ctx.moveTo(canvas.width/2-120, canvas.height/2); ctx.lineTo(canvas.width/2+120, canvas.height/2);
-        ctx.moveTo(canvas.width/2, canvas.height/2-120); ctx.lineTo(canvas.width/2, canvas.height/2+120);
-        ctx.stroke();
+  const w=canvas.width,h=canvas.height,base=h-185,slice=w/dataArray.length;
+  ctx.save();
+  ctx.beginPath();
+  ctx.strokeStyle="rgba(0,242,255,.58)";
+  ctx.lineWidth=1;
 
-        // Audio Visualizer (Waveform on HUD)
-        if (analyser) {
-            analyser.getByteFrequencyData(dataArray);
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(0, 242, 255, 0.5)';
-            let slice = canvas.width / dataArray.length;
-            let x = 0;
-            let maxHz = 0, maxDb = 0;
+  for(let i=0;i<dataArray.length;i++){
+    const x=i*slice;
+    const y=base-(dataArray[i]/255)*85;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 
-            for(let i=0; i<dataArray.length; i++) {
-                let v = dataArray[i] / 128.0;
-                let y = v * 50;
-                if(i===0) ctx.moveTo(x, canvas.height - 200 - y);
-                else ctx.lineTo(x, canvas.height - 200 - y);
-                x += slice;
-                if(dataArray[i] > maxDb) { maxDb = dataArray[i]; maxHz = i; }
-            }
-            ctx.stroke();
-
-            const hz = Math.round(maxHz * audioCtx.sampleRate / analyser.fftSize);
-            document.getElementById('f-val').innerText = hz + " Hz";
-            
-            // AI Comment Logic
-            if(hz > 15000) {
-                document.getElementById('z-val').innerText = "ULTRASONIC";
-                document.getElementById('ai-msg').innerText = "AI: İnsan kulağının duyamadığı yüksek frekanslı bir sinyal yakalandı.";
-            } else if(hz < 60 && maxDb > 50) {
-                document.getElementById('z-val').innerText = "INFRASONIC";
-                document.getElementById('ai-msg').innerText = "AI: Derin, düşük frekanslı bir uğultu tespit edildi. Yapısal bir titreşim olabilir.";
-            } else {
-                document.getElementById('z-val').innerText = "NORMAL";
-            }
-        }
-        requestAnimationFrame(render);
-    }
-
-    function adjustZoom(amt) {
-        zoom = Math.max(1, Math.min(60, zoom + (amt/5)));
-        video.style.transform = `scale(${zoom})`;
-    }
-
-    window.onload = init;
+window.addEventListener("resize",()=>{
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+});
 </script>
 </body>
 </html>
