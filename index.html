@@ -3,131 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-    <title>AstroVision V10 - Celestial Entity</title>
+    <title>AstroVision V11 - Galactic Overlord</title>
+    
+    <!-- Ultra-Deep Astronomy Engine & Icons -->
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root { --neon: #00f2ff; --glass: rgba(0, 10, 20, 0.7); }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
-        
-        /* layers */
-        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-        #ar-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
-        
-        /* UI Elements */
-        .ui-overlay { position: absolute; z-index: 10; pointer-events: auto; }
-        #hud-top { top: env(safe-area-inset-top); left: 0; right: 0; padding: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); text-align: center; }
-        #target-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border: 1px dashed var(--neon); border-radius: 50%; opacity: 0.5; animation: rotate 20s linear infinite; }
-        
-        /* Siri Orb & Controls */
-        .siri-nebula { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 200px; height: 80px; background: radial-gradient(circle, #00f2ff, #7000ff, #ff00c8); filter: blur(35px); border-radius: 50%; z-index: 5; opacity: 0.4; animation: pulse 4s infinite; }
-        #controls { bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 25px; background: var(--glass); backdrop-filter: blur(25px); padding: 15px 30px; border-radius: 50px; border: 1px solid rgba(0,242,255,0.3); }
-        
-        .btn-action { width: 55px; height: 55px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid var(--neon); color: white; display: flex; align-items: center; justify-content: center; }
-        #shutter { width: 75px; height: 75px; border: 5px solid #fff; background: rgba(255,255,255,0.2); }
 
-        @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1.0); opacity: 0.3; } 50% { transform: translateX(-50%) scale(1.4, 0.8); opacity: 0.6; } }
+    <style>
+        :root { 
+            --neon: #00f2ff; 
+            --deep-purple: #7000ff;
+            --glass: rgba(0, 5, 15, 0.85);
+            --border: rgba(0, 242, 255, 0.3);
+        }
         
-        #telemetry { position: absolute; top: 100px; left: 15px; font-size: 10px; color: var(--neon); line-height: 1.5; font-family: monospace; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #000; color: #fff; font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+
+        /* Arka Plan Katmanları */
+        #main-container { position: relative; width: 100vw; height: 100vh; }
+        #video-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: filter 0.5s ease; }
+        #rendering-surface { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+
+        /* Premium Glassmorphism HUD */
+        .hud-panel { position: absolute; z-index: 10; pointer-events: auto; backdrop-filter: blur(25px); border: 1px solid var(--border); border-radius: 20px; background: var(--glass); }
+        
+        #header-bar { top: env(safe-area-inset-top); left: 15px; right: 15px; height: 60px; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%); border: none; border-radius: 0; }
+        #header-bar h1 { font-size: 16px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 15px var(--neon); color: #fff; }
+
+        #telemetry-box { top: 120px; left: 15px; width: 160px; padding: 15px; font-family: 'Courier New', monospace; font-size: 10px; color: var(--neon); }
+        .data-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid rgba(0,242,255,0.1); padding-bottom: 2px; }
+
+        /* Dynamic Target Crosshair */
+        #scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; z-index: 5; pointer-events: none; }
+        .scan-ring { position: absolute; inset: 0; border: 1px solid var(--neon); border-radius: 50%; opacity: 0.2; animation: pulseRing 4s infinite; }
+        .scan-ring-inner { position: absolute; inset: 30%; border: 1px dashed var(--neon); border-radius: 50%; opacity: 0.4; animation: rotate 30s linear infinite; }
+
+        /* Siri-Inspired AI Control Hub */
+        #ai-control-hub { position: absolute; bottom: 0; left: 0; right: 0; height: 280px; background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: env(safe-area-inset-bottom); }
+        
+        .siri-nebula-core { position: absolute; bottom: 40px; width: 220px; height: 100px; background: radial-gradient(ellipse at center, var(--neon), var(--deep-purple), #ff00c8); filter: blur(40px); opacity: 0.5; border-radius: 50%; z-index: -1; animation: siriBreath 5s infinite ease-in-out; }
+
+        #action-bar { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
+        .control-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--glass); border: 1px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .control-btn:active { transform: scale(0.85); background: var(--neon); color: #000; }
+        #capture-btn { width: 85px; height: 85px; border: 6px solid #fff; background: rgba(255,255,255,0.15); box-shadow: 0 0 25px rgba(0, 242, 255, 0.4); }
+
+        /* Orbital Map (Mini-Map) */
+        #orbital-map { position: absolute; top: 120px; right: 15px; width: 120px; height: 120px; border-radius: 50%; overflow: hidden; }
+
+        /* Animations */
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0; } 50% { opacity: 0.3; } 100% { transform: scale(1.2); opacity: 0; } }
+        @keyframes siriBreath { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.5, 0.85); opacity: 0.7; } }
+
+        #permission-overlay { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+        .prime-btn { padding: 15px 40px; background: var(--neon); color: #000; font-weight: 900; border-radius: 50px; border: none; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<video id="video" autoplay playsinline muted></video>
-<canvas id="ar-canvas"></canvas>
-<div class="siri-nebula"></div>
-
-<div id="hud-top" class="ui-overlay">
-    <div style="font-weight: 900; font-size: 20px; text-shadow: 0 0 10px var(--neon);">CELESTIAL ENTITY V10</div>
-    <div id="target-name" style="color: var(--neon); font-size: 11px; margin-top: 5px;">HEDEF ARANIYOR...</div>
+<div id="permission-overlay">
+    <h2 style="color: var(--neon); letter-spacing: 2px;">V11 GALACTIC OVERLORD</h2>
+    <p style="font-size: 12px; margin-top: 15px; opacity: 0.7;">SİSTEMLERİ BAŞLATMAK İÇİN SENSÖR ERİŞİMİ GEREKLİ</p>
+    <button class="prime-btn" onclick="requestFullAccess()">SİSTEMİ ÇALIŞTIR</button>
 </div>
 
-<div id="telemetry" class="ui-overlay">
-    AZIMUTH: <span id="val-az">--</span><br>
-    ALTITUDE: <span id="val-alt">--</span><br>
-    OBJECT: <span id="val-obj">NONE</span><br>
-    GPS: <span id="val-gps">LOCKED</span>
-</div>
+<div id="main-container">
+    <video id="video-feed" autoplay playsinline muted></video>
+    <canvas id="rendering-surface"></canvas>
 
-<div id="target-box"></div>
+    <div id="header-bar">
+        <h1>CELESTIAL ENTITY V11</h1>
+    </div>
 
-<div id="controls" class="ui-overlay">
-    <button class="btn-action" onclick="adjustZoom(-5)"><i data-lucide="minus"></i></button>
-    <div id="shutter" class="btn-action" onclick="takeSnapshot()"></div>
-    <button class="btn-action" onclick="adjustZoom(5)"><i data-lucide="plus"></i></button>
+    <div id="scanner-overlay">
+        <div class="scan-ring"></div>
+        <div class="scan-ring-inner"></div>
+    </div>
+
+    <div id="telemetry-box" class="hud-panel">
+        <div class="data-line"><span>AZIMUTH</span><b id="val-az">000°</b></div>
+        <div class="data-line"><span>ALTITUDE</span><b id="val-alt">00.0°</b></div>
+        <div class="data-line"><span>OBJ-REF</span><b id="val-obj">AUTO</b></div>
+        <div class="data-line"><span>GPS-ACC</span><b id="val-gps">HIGH</b></div>
+        <div class="data-line"><span>ISO-LVL</span><b id="val-iso">AUTO</b></div>
+    </div>
+
+    <div id="orbital-map" class="hud-panel">
+        <canvas id="map-canvas"></canvas>
+    </div>
+
+    <div id="ai-control-hub">
+        <div class="siri-nebula-core"></div>
+        <div id="action-bar">
+            <button class="control-btn" onclick="adjustZoom(-10)"><i data-lucide="zoom-out"></i></button>
+            <button class="control-btn" id="capture-btn" onclick="captureUltraRes()"></button>
+            <button class="control-btn" onclick="adjustZoom(10)"><i data-lucide="zoom-in"></i></button>
+        </div>
+        <p id="ai-status" style="font-size: 10px; color: var(--neon); margin-bottom: 25px; letter-spacing: 2px;">AI: DEEP SPACE SCAN ACTIVE</p>
+    </div>
 </div>
 
 <script>
     lucide.createIcons();
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('ar-canvas');
+    const video = document.getElementById('video-feed');
+    const canvas = document.getElementById('rendering-surface');
     const ctx = canvas.getContext('2d');
-    let zoom = 1.0, lat, lon, heading = 0;
+    let zoomLevel = 1.0, lat, lon, heading = 0, pitch = 0;
 
-    async function init() {
+    // Sistem Başlatma (Güvenli Alan)
+    async function requestFullAccess() {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission !== 'granted') return alert('Sensör erişimi reddedildi.');
+        }
+        
+        document.getElementById('permission-overlay').style.display = 'none';
+        initSystems();
+    }
+
+    async function initSystems() {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: "environment" }, width: { ideal: 3840 } }
+            video: { 
+                facingMode: { exact: "environment" }, 
+                width: { ideal: 3840 },
+                height: { ideal: 2160 }
+            }
         });
         video.srcObject = stream;
-        
+
         navigator.geolocation.getCurrentPosition(p => {
             lat = p.coords.latitude;
             lon = p.coords.longitude;
+            document.getElementById('val-gps').innerText = 'LOCKED';
         });
 
         window.addEventListener('deviceorientation', e => {
             heading = e.webkitCompassHeading || 360 - e.alpha;
-            updateCelestialMath();
+            pitch = e.beta;
+            updateAstroCalculations();
         });
 
-        render();
+        renderEngine();
     }
 
-    function updateCelestialMath() {
-        if(!lat || !lon) return;
+    function updateAstroCalculations() {
+        if (!lat || !lon) return;
         const now = new Date();
         const observer = new Astronomy.Observer(lat, lon, 0);
         
-        // Ay ve Gezegenleri Tara
         const bodies = ['Moon', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
+        let detected = "DEEP SPACE";
+
         bodies.forEach(body => {
             const equ = Astronomy.Equator(body, now, observer, true, true);
             const hor = Astronomy.Horizon(now, observer, equ.ra, equ.dec, 'normal');
             
-            if(Math.abs(hor.azimuth - heading) < 10 && hor.altitude > 0) {
-                document.getElementById('val-obj').innerText = body.toUpperCase();
-                document.getElementById('target-name').innerText = body.toUpperCase() + " TESPİT EDİLDİ";
+            // Hassas hedef kilitleme mantığı
+            if (Math.abs(hor.azimuth - heading) < 8 && Math.abs(hor.altitude - pitch) < 8) {
+                detected = body.toUpperCase();
+                document.getElementById('ai-status').innerText = `AI: ${detected} DETECTED - AUTO FOCUS`;
             }
         });
-        
-        document.getElementById('val-az').innerText = Math.round(heading) + "°";
+
+        document.getElementById('val-az').innerText = Math.round(heading).toString().padStart(3, '0') + '°';
+        document.getElementById('val-alt').innerText = Math.round(pitch) + '.0°';
+        document.getElementById('val-obj').innerText = detected;
     }
 
-    function render() {
+    function renderEngine() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        const w = canvas.width / zoom;
-        const h = canvas.height / zoom;
-        ctx.drawImage(video, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h, 0, 0, canvas.width, canvas.height);
+        const w = canvas.width / zoomLevel;
+        const h = canvas.height / zoomLevel;
+        const sx = (canvas.width - w) / 2;
+        const sy = (canvas.height - h) / 2;
+
+        ctx.drawImage(video, sx, sy, w, h, 0, 0, canvas.width, canvas.height);
         
-        requestAnimationFrame(render);
+        // Profesyonel Overlay Çizimi
+        drawOverlayDecorations();
+        
+        requestAnimationFrame(renderEngine);
+    }
+
+    function drawOverlayDecorations() {
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2); ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
     }
 
     function adjustZoom(amt) {
-        zoom = Math.max(1, Math.min(100, zoom + amt));
+        zoomLevel = Math.max(1, Math.min(150, zoomLevel + (amt / 10)));
+        document.getElementById('val-iso').innerText = zoomLevel.toFixed(1) + 'X';
     }
 
-    function takeSnapshot() {
+    function captureUltraRes() {
         const link = document.createElement('a');
-        link.download = `AstroV10_${Date.now()}.png`;
-        link.href = canvas.toDataURL();
+        link.download = `V11_GALACTIC_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
     }
-
-    window.onload = init;
 </script>
 </body>
 </html>
